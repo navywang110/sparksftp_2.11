@@ -51,6 +51,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
   override def createRelation(sqlContext: SQLContext, parameters: Map[String, String], schema: StructType) = {
     val appId = parameters.getOrElse("appId","application")
     val stepId = parameters.getOrElse("stepId","sftp")
+    val localTempDir = parameters.getOrElse("localTempDir", "/tmp")
     val newAppId = appId + "_" + stepId
     val username = parameters.get("username")
     val password = parameters.get("password")
@@ -87,8 +88,8 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
 
     val sftpClient = getSFTPClient(username, password, pemFileLocation, pemPassphrase, host, port,
       cryptoKey, cryptoAlgorithm)
-    //新建本地tmp层级目录,一个flow如果包含多个sftp source需要区分开
-    var temDir = tempFolder + File.separator + newAppId
+    //新建本地临时存放目录,一个flow如果包含多个sftp source需要区分开
+    var temDir = localTempDir + File.separator + newAppId
     val target = temDir+ File.separator + FilenameUtils.getName(path)
 
     var isDir : Boolean = false
@@ -330,6 +331,7 @@ class DefaultSource extends RelationProvider with SchemaRelationProvider with Cr
       logger.info("Session created...")
       if (password != null) session.setPassword(password) // 设置密码
       val config = new Properties
+      config.put("kex", "diffie-hellman-group1-sha1,diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha1,diffie-hellman-group-exchange-sha256")
       config.put("StrictHostKeyChecking", "no")
       session.setConfig(config) // 为Session对象设置properties
 
